@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>nuget-license-enricher</ToolCommandName>
+
+		<PackageId>NuGetLicenseEnricher.Tool</PackageId>
+		<Version>1.0.0</Version>
+		<Title>NuGet License Enricher</Title>
+		<Authors>Shivam Singh</Authors>
+		<Description>Enriches NuGet licence information in CycloneDX 1.6 JSON SBOMs.</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>cyclonedx;sbom;nuget;license;dotnet-tool</PackageTags>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+
+		<!-- Add these after the code is in source control -->
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://YOUR-REPOSITORY-URL</RepositoryUrl>
+		<PackageProjectUrl>https://YOUR-REPOSITORY-URL</PackageProjectUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NuGet.Versioning" Version="7.6.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\" />
+		<None Include="..\LICENSE" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+</Project>

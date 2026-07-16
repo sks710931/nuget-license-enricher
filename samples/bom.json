@@ -1,0 +1,85 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:00000000-0000-4000-8000-000000000001",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-16T00:00:00Z",
+    "component": {
+      "type": "application",
+      "bom-ref": "application:sample",
+      "name": "Sample Application",
+      "version": "1.0.0"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Newtonsoft.Json@13.0.3",
+      "name": "Newtonsoft.Json",
+      "version": "13.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        }
+      ],
+      "purl": "pkg:nuget/Newtonsoft.Json@13.0.3",
+      "properties": [
+        {
+          "name": "example:preserved",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Serilog@4.0.0",
+      "name": "Serilog",
+      "version": "4.0.0",
+      "purl": "pkg:nuget/Serilog@4.0.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "bom-ref": "file:native.dll",
+      "name": "native.dll",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "application:sample",
+      "dependsOn": [
+        "pkg:nuget/Newtonsoft.Json@13.0.3",
+        "pkg:nuget/Serilog@4.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Newtonsoft.Json@13.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/Serilog@4.0.0",
+      "dependsOn": []
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2024-0000",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-0000"
+      },
+      "affects": [
+        {
+          "ref": "pkg:nuget/Newtonsoft.Json@13.0.3"
+        }
+      ]
+    }
+  ]
+}

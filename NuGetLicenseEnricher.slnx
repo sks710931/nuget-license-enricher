@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="NuGetLicenseEnricher/NuGetLicenseEnricher.csproj" />
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Project Path="NuGetLicenseEnricher.Tests/NuGetLicenseEnricher.Tests.csproj" />
+</Solution>
