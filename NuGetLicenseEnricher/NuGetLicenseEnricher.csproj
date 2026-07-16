@@ -11,7 +11,7 @@
 		<ToolCommandName>nuget-license-enricher</ToolCommandName>
 
 		<PackageId>NuGetLicenseEnricher.Tool</PackageId>
-		<Version>1.0.0</Version>
+		<VersionPrefix>1.0.0</VersionPrefix>
 		<Title>NuGet License Enricher</Title>
 		<Authors>Shivam Singh</Authors>
 		<Description>Enriches NuGet licence information in CycloneDX 1.6 JSON SBOMs.</Description>
@@ -19,10 +19,9 @@
 		<PackageTags>cyclonedx;sbom;nuget;license;dotnet-tool</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 
-		<!-- Add these after the code is in source control -->
 		<RepositoryType>git</RepositoryType>
-		<RepositoryUrl>https://YOUR-REPOSITORY-URL</RepositoryUrl>
-		<PackageProjectUrl>https://YOUR-REPOSITORY-URL</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/sks710931/nuget-license-enricher.git</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/sks710931/nuget-license-enricher</PackageProjectUrl>
 	</PropertyGroup>
 
 	<ItemGroup>

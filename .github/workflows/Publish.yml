@@ -1,0 +1,105 @@
+name: Publish NuGet Package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  CONFIGURATION: Release
+
+jobs:
+  publish:
+    name: Validate and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve package version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            throw 'github.ref_name is empty.'
+          }
+
+          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+)$') {
+            throw "Release tags must follow v<major>.<minor>.<patch>. Received '$tag'."
+          }
+
+          $tagVersion = $Matches['version']
+          $project = 'NuGetLicenseEnricher/NuGetLicenseEnricher.csproj'
+          $projectVersion = (dotnet msbuild $project -nologo -getProperty:VersionPrefix).Trim()
+
+          if ($tagVersion -ne $projectVersion) {
+            throw "Tag version '$tagVersion' does not match VersionPrefix '$projectVersion'."
+          }
+
+          "package_version=$tagVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Restore
+        run: dotnet restore NuGetLicenseEnricher.slnx
+
+      - name: Build
+        run: >-
+          dotnet build NuGetLicenseEnricher.slnx
+          --configuration "$CONFIGURATION"
+          --no-restore
+
+      - name: Test
+        run: >-
+          dotnet test NuGetLicenseEnricher.slnx
+          --configuration "$CONFIGURATION"
+          --no-build
+
+      - name: Pack NuGet tool
+        run: >-
+          dotnet pack NuGetLicenseEnricher/NuGetLicenseEnricher.csproj
+          --configuration "$CONFIGURATION"
+          --no-build
+          --no-restore
+          -p:PackageVersion="${{ steps.version.outputs.package_version }}"
+          --output artifacts/packages
+
+      - name: Install packaged tool
+        run: >-
+          dotnet tool install
+          --tool-path "$RUNNER_TEMP/nuget-license-tools"
+          --add-source artifacts/packages
+          NuGetLicenseEnricher.Tool
+          --version "${{ steps.version.outputs.package_version }}"
+
+      - name: Smoke-test packaged tool
+        run: >-
+          "$RUNNER_TEMP/nuget-license-tools/nuget-license-enricher"
+          --input samples/bom.enriched.json
+          --output "$RUNNER_TEMP/bom.roundtrip.json"
+
+      - name: Publish to NuGet.org
+        env:
+          NUGET_KEY: ${{ secrets.NUGET_KEY }}
+        run: |
+          if [ -z "$NUGET_KEY" ]; then
+            echo "The NUGET_KEY repository secret is not configured."
+            exit 1
+          fi
+
+          dotnet nuget push artifacts/packages/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_KEY" \
+            --skip-duplicate
