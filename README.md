@@ -1,71 +1,104 @@
 # NuGetLicenseEnricher
 
-`NuGetLicenseEnricher` is a .NET 10 console application that enriches unlicensed NuGet components in a CycloneDX 1.6 JSON SBOM. It always queries the exact package ID and version encoded in the component PURL and preserves the rest of the JSON document.
+`NuGetLicenseEnricher` enriches missing NuGet licence information in CycloneDX 1.6 JSON SBOMs while preserving components, dependencies, references, vulnerabilities, and unknown JSON properties.
 
 ## Requirements
 
-- .NET 10 SDK
+- .NET 10 SDK or runtime
 - Network access to `api.nuget.org`
+- A CycloneDX 1.6 JSON SBOM
 
-## Build and test
+## Install from NuGet.org
+
+Install the tool globally:
 
 ```shell
-dotnet restore NuGetLicenseEnricher.slnx
-dotnet build NuGetLicenseEnricher.slnx --no-restore
-dotnet test NuGetLicenseEnricher.slnx --no-build
+dotnet tool install --global NuGetLicenseEnricher.Tool --version 1.0.0
+```
+
+Update an existing installation:
+
+```shell
+dotnet tool update --global NuGetLicenseEnricher.Tool --version 1.0.0
+```
+
+After installation, the command is available as `nuget-license-enricher`.
+
+## Install from Azure Artifacts
+
+Authenticate with the Azure Artifacts feed, then install using its NuGet V3 URL:
+
+```shell
+dotnet tool install --global NuGetLicenseEnricher.Tool --version 1.0.0 --add-source "https://pkgs.dev.azure.com/ORGANIZATION/PROJECT/_packaging/FEED/nuget/v3/index.json"
+```
+
+Do not place feed credentials or personal access tokens in scripts or source control.
+
+### Azure Pipeline
+
+Install the tool into the agent's temporary directory so each pipeline run uses a clean, pinned installation:
+
+```yaml
+- task: UseDotNet@2
+  displayName: Install .NET 10 SDK
+  inputs:
+    packageType: sdk
+    version: '10.x'
+
+- task: NuGetAuthenticate@1
+  displayName: Authenticate with Azure Artifacts
+
+- bash: |
+    dotnet tool install \
+      --tool-path "$(Agent.TempDirectory)/nuget-license-tools" \
+      --add-source "https://pkgs.dev.azure.com/ORGANIZATION/PROJECT/_packaging/FEED/nuget/v3/index.json" \
+      NuGetLicenseEnricher.Tool \
+      --version 1.0.0
+  displayName: Install NuGetLicenseEnricher
 ```
 
 ## Usage
 
-From the repository root:
-
 ```shell
-dotnet run --project NuGetLicenseEnricher/NuGetLicenseEnricher.csproj -- \
-  --input bom.json \
-  --output bom.enriched.json
+nuget-license-enricher --input bom.json --output bom.enriched.json
 ```
 
-On PowerShell, the same command can be entered on one line:
+The input file is not modified. The enriched CycloneDX 1.6 JSON SBOM is written to the path supplied with `--output`.
+
+### PowerShell example
 
 ```powershell
-dotnet run --project NuGetLicenseEnricher/NuGetLicenseEnricher.csproj -- --input bom.json --output bom.enriched.json
+nuget-license-enricher `
+  --input "C:\SBOM\bom.json" `
+  --output "C:\SBOM\bom.enriched.json"
 ```
 
-The [`samples/bom.json`](samples/bom.json) and [`samples/bom.enriched.json`](samples/bom.enriched.json) files show an input and its enriched result.
+### Linux or macOS example
 
-## Lookup behavior
+```shell
+nuget-license-enricher \
+  --input ./sbom/bom.json \
+  --output ./sbom/bom.enriched.json
+```
 
-Only top-level `components` whose PURL starts with `pkg:nuget/` are considered. The package ID and version come from the PURL, including percent decoding; the component's `version` field is not substituted for a missing PURL version. Components are skipped when they are operating-system components, already licensed, or do not contain a usable exact NuGet version.
+### Azure Pipeline usage
 
-For each package, the application uses this order:
+When installed with `--tool-path` as shown above:
 
-1. `licenseExpression` in the exact-version NuGet registration catalog entry.
-2. An expression declared by `<license type="expression">` in the package `.nuspec`.
-3. An existing package file declared by `<license type="file">`, represented as `Custom license`.
-4. A legacy HTTP(S) `licenseUrl`, recorded as a named CycloneDX license with its URL.
+```yaml
+- bash: |
+    "$(Agent.TempDirectory)/nuget-license-tools/nuget-license-enricher" \
+      --input "$(Build.SourcesDirectory)/bom.json" \
+      --output "$(Build.ArtifactStagingDirectory)/bom.enriched.json"
+  displayName: Enrich CycloneDX SBOM
 
-No latest-version lookup is performed. Repository links and license URLs are never followed, and no license is inferred from package contents or source repositories. Results are cached case-insensitively by normalized package ID and NuGet version for the duration of the run.
+- publish: $(Build.ArtifactStagingDirectory)/bom.enriched.json
+  artifact: enriched-sbom
+  displayName: Publish enriched SBOM
+```
 
-## Reliability and safety
+## Uninstall
 
-- At most five package lookups run concurrently.
-- HTTP requests time out after 30 seconds.
-- HTTP 408, 429, 5xx responses, timeouts, and network failures are retried up to three times.
-- A failed package is reported and does not stop other components.
-- Registration JSON is limited to 10 MiB and `.nupkg` downloads to 100 MiB.
-- Packages are opened as ZIP archives in memory. Files are not extracted or executed.
-- Unsafe absolute or `..` ZIP paths are ignored; XML DTD processing and external resolution are disabled.
-- Ctrl+C cancels outstanding work without writing a partial enriched output.
-
-Input parsing requires a JSON object with `bomFormat: "CycloneDX"`, `specVersion: "1.6"`, and an array of component objects when `components` is present. Unknown properties are deliberately retained, including extension data that the official schema may not recognize. The supplied samples are validated against the official CycloneDX 1.6 JSON schema.
-
-## Exit codes
-
-- `0`: processing completed, was cancelled, or only individual package lookups failed
-- `2`: the command line or input could not be read
-- `3`: the input is not a CycloneDX 1.6 JSON document
-- `4`: the output could not be written
-
-## Dependency-Track compatibility
-
-The application emits the CycloneDX 1.6 license choices expected by Dependency-Track and does not alter `bom-ref` or dependency references. Dependency-Track added CycloneDX 1.6 ingestion support in version 4.11.4. Validate organization-specific extensions and upload limits in the target Dependency-Track deployment before production import.
+```shell
+dotnet tool uninstall --global NuGetLicenseEnricher.Tool
+```
