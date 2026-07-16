@@ -6,3 +6,6 @@ TestResults/
 .vs
 /artifacts/packages
 /NuGetLicenseEnricher/.tools
+/.tools-test
+/bom.enriched.json
+/sample.json
