@@ -53,3 +53,17 @@ nuget-license-enricher \
 ```shell
 dotnet tool uninstall --global NuGetLicenseEnricher.Tool
 ```
+
+## Optional - .NET 9 LTS
+
+This is not a multitarget build. You decide to build either .NET 10 or .NET 9. To checkout and build .NET 9 LTS you need the optional `UseNet9` parameter to the dotnet command:
+
+```shell
+dotnet restore -p:UseNet9=true
+dotnet build -p:UseNet9=true
+dotnet test -p:UseNet9=true
+```
+```shell
+cd NuGetLicenseEnricher
+dotnet run -p:UseNet9=true -- --input bom.json --output bom.enriched.
+```
